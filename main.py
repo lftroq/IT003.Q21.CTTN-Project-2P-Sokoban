@@ -2,6 +2,7 @@ import copy
 import pygame
 
 from setup import gameSetup as gs
+from interactor import interactor
 
 # Color constants for player indicators
 P1_COLOR = (220, 60, 60)
@@ -9,8 +10,18 @@ P2_COLOR = (60, 140, 220)
 P1_READY = (180, 90, 90)
 P2_READY = (90, 140, 180)
 
-move_limit = 50
-map_mode = "SEP"
+move_limit = 200
+map_mode = "SYM"
+
+
+playerOneInteract, playerTwoInteract = True, False
+filename = ["sample", "sample"]
+
+BOT_MODELS = {
+    "EASY": "sample.exe",
+    "MED": "sample.exe",
+    "HARD": "sample.exe",
+}
 
 # Keyboard mappings for each player
 P1_KEYS = [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]
@@ -19,6 +30,7 @@ P2_KEYS = [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]
 P1_MAP = {pygame.K_w: "U", pygame.K_s: "D", pygame.K_a: "L", pygame.K_d: "R"}
 P2_MAP = {pygame.K_LEFT: "L", pygame.K_RIGHT: "R", pygame.K_UP: "U", pygame.K_DOWN: "D"}
 
+BOT_DELAY_MS = 150
 
 def _draw_text(surface: pygame.Surface, text: str, font: pygame.font.Font, x: int, y: int, color=(255, 255, 255)):
     """
@@ -71,6 +83,270 @@ class UIButton:
         """Check if the given position collides with the button."""
         return self.rect.collidepoint(pos)
 
+class MenuScreen:
+    """Main menu with Play button and title."""
+
+    def __init__(self):
+        """Initialize menu screen with fonts and button layout."""
+        self.title_font = pygame.font.Font("graphics/silkscreen.ttf", 42)
+        self.btn_font = pygame.font.Font("graphics/silkscreen.ttf", 28)
+
+        btn_w, btn_h = 220, 70
+        self.play_rect = pygame.Rect(0, 0, btn_w, btn_h)
+        self.play_rect.center = (gs.xSize // 2, gs.ySize // 2 + 60)
+
+        self.hint_font = pygame.font.Font("graphics/silkscreen.ttf", 16)
+
+    def draw(self):
+        """Render menu screen with title and play button."""
+        gs.screen.fill((0, 0, 0))
+
+        _draw_text(gs.screen, "2P SOKOBAN", self.title_font, gs.xSize // 2, gs.ySize // 2 - 40)
+
+        pygame.draw.rect(gs.screen, (30, 30, 30), self.play_rect)
+        pygame.draw.rect(gs.screen, (200, 200, 200), self.play_rect, 2)
+        _draw_text(gs.screen, "PLAY", self.btn_font, self.play_rect.centerx, self.play_rect.centery)
+
+        _draw_text(
+            gs.screen,
+            "Click Play or press ENTER",
+            self.hint_font,
+            gs.xSize // 2,
+            self.play_rect.bottom + 28,
+            color=(160, 160, 160),
+        )
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Handle menu events.
+        
+        Returns:
+            True if player wants to start game
+        """
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.play_rect.collidepoint(event.pos):
+                return True
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+            return True
+        return False
+
+
+class InitScreen:
+    """Game initialization screen for player/bot selection and settings."""
+
+    def __init__(self):
+        """Initialize init screen with buttons for player modes, difficulty, and move limits."""
+        self.title_font = pygame.font.Font("graphics/silkscreen.ttf", 34)
+        self.font = pygame.font.Font("graphics/silkscreen.ttf", 16)
+        self.btn_font = pygame.font.Font("graphics/silkscreen.ttf", 16)
+        self.big_num_font = pygame.font.Font("graphics/silkscreen.ttf", 32)
+
+        panel_w, panel_h = 620, 400
+        self.panel = pygame.Rect(0, 0, panel_w, panel_h)
+        self.panel.center = (gs.xSize // 2, gs.ySize // 2)
+
+        col_w = 240
+        left_x = self.panel.left + 70
+        right_x = self.panel.right - 70 - col_w
+        top_y = self.panel.top + 85
+
+        box_w, box_h, gap_y = col_w, 44, 12
+        diff_w, diff_h, diff_gap = 72, 36, 12
+
+        self.p1_human = UIButton(pygame.Rect(left_x, top_y, box_w, box_h), "HUMAN")
+        self.p1_bot   = UIButton(pygame.Rect(left_x, top_y + box_h + gap_y, box_w, box_h), "BOT")
+        dy = top_y + 2 * (box_h + gap_y) + 6
+        self.p1_easy  = UIButton(pygame.Rect(left_x, dy, diff_w, diff_h), "EASY")
+        self.p1_med   = UIButton(pygame.Rect(left_x + diff_w + diff_gap, dy, diff_w, diff_h), "MED")
+        self.p1_hard  = UIButton(pygame.Rect(left_x + 2 * (diff_w + diff_gap), dy, diff_w, diff_h), "HARD")
+
+        self.p2_human = UIButton(pygame.Rect(right_x, top_y, box_w, box_h), "HUMAN")
+        self.p2_bot   = UIButton(pygame.Rect(right_x, top_y + box_h + gap_y, box_w, box_h), "BOT")
+        self.p2_easy  = UIButton(pygame.Rect(right_x, dy, diff_w, diff_h), "EASY")
+        self.p2_med   = UIButton(pygame.Rect(right_x + diff_w + diff_gap, dy, diff_w, diff_h), "MED")
+        self.p2_hard  = UIButton(pygame.Rect(right_x + 2 * (diff_w + diff_gap), dy, diff_w, diff_h), "HARD")
+
+        my = self.panel.bottom - 160
+        self.btn_minus = UIButton(pygame.Rect(self.panel.left + 120, my, 54, 38), "-")
+        self.btn_plus  = UIButton(pygame.Rect(self.panel.left + 250, my, 54, 38), "+")
+        self.btn_50  = UIButton(pygame.Rect(right_x, my, diff_w, diff_h), "50")
+        self.btn_100   = UIButton(pygame.Rect(right_x + diff_w + diff_gap, my, diff_w, diff_h), "100")
+        self.btn_200   = UIButton(pygame.Rect(right_x + 2 * (diff_w + diff_gap), my, diff_w, diff_h), "200")
+
+        mode_y = my + 50
+        self.btn_mode_sep = UIButton(pygame.Rect(self.panel.left + 120, mode_y, 90, 36), "SEP")
+        self.btn_mode_sym = UIButton(pygame.Rect(self.panel.left + 220, mode_y, 90, 36), "SYM")
+        self.btn_mode_def = UIButton(pygame.Rect(self.panel.left + 320, mode_y, 90, 36), "DEF")
+
+        sy = self.panel.bottom - 45
+        self.btn_start = UIButton(pygame.Rect(self.panel.centerx - 120, sy, 110, 40), "START")
+        self.btn_back  = UIButton(pygame.Rect(self.panel.centerx + 10, sy, 110, 40), "BACK")
+
+        self.p1_is_bot = True
+        self.p2_is_bot = False
+        self.p1_diff = "HARD"
+        self.p2_diff = "HARD"
+        self.move_limit = 50
+        self.map_mode = "SYM"
+
+    def _apply_settings(self):
+        """Apply selected settings to global game variables."""
+        global playerOneInteract, playerTwoInteract, filename, move_limit, map_mode
+
+        playerOneInteract = self.p1_is_bot
+        playerTwoInteract = self.p2_is_bot
+
+        if self.p1_is_bot:
+            filename[0] = BOT_MODELS[self.p1_diff]
+        if self.p2_is_bot:
+            filename[1] = BOT_MODELS[self.p2_diff]
+
+        move_limit = max(1, int(self.move_limit))
+        map_mode = self.map_mode
+
+    def draw(self):
+        """Render initialization screen with all configuration options."""
+        gs.screen.fill((0, 0, 0))
+        pygame.draw.rect(gs.screen, (18, 18, 18), self.panel, border_radius=14)
+        pygame.draw.rect(gs.screen, (200, 200, 200), self.panel, 2, border_radius=14)
+
+        _draw_text(gs.screen, "GAME INIT", self.title_font, self.panel.centerx, self.panel.top + 38)
+
+        _draw_text(gs.screen, "P1", self.font, self.p1_human.rect.centerx, self.p1_human.rect.top - 12, color=(200, 200, 200))
+        _draw_text(gs.screen, "P2", self.font, self.p2_human.rect.centerx, self.p2_human.rect.top - 12, color=(200, 200, 200))
+
+        mx, my = pygame.mouse.get_pos()
+
+        self.p1_human.draw(gs.screen, self.btn_font, hovered=self.p1_human.hit((mx, my)))
+        self.p1_bot.draw(gs.screen, self.btn_font, hovered=self.p1_bot.hit((mx, my)))
+
+        sel = self.p1_bot if self.p1_is_bot else self.p1_human
+        pygame.draw.rect(gs.screen, (255, 255, 255), sel.rect, 3, border_radius=8)
+
+        self.p1_easy.draw(gs.screen, self.btn_font, hovered=self.p1_easy.hit((mx, my)))
+        self.p1_med.draw(gs.screen, self.btn_font, hovered=self.p1_med.hit((mx, my)))
+        self.p1_hard.draw(gs.screen, self.btn_font, hovered=self.p1_hard.hit((mx, my)))
+
+        p1sel = {"EASY": self.p1_easy, "MED": self.p1_med, "HARD": self.p1_hard}[self.p1_diff]
+        pygame.draw.rect(gs.screen, (255, 255, 255), p1sel.rect, 2, border_radius=8)
+        if not self.p1_is_bot:
+            dim = pygame.Surface((p1sel.rect.width * 3 + 24, p1sel.rect.height), pygame.SRCALPHA)
+            dim.fill((0, 0, 0, 120))
+            gs.screen.blit(dim, (self.p1_easy.rect.left, self.p1_easy.rect.top))
+
+        self.p2_human.draw(gs.screen, self.btn_font, hovered=self.p2_human.hit((mx, my)))
+        self.p2_bot.draw(gs.screen, self.btn_font, hovered=self.p2_bot.hit((mx, my)))
+
+        sel2 = self.p2_bot if self.p2_is_bot else self.p2_human
+        pygame.draw.rect(gs.screen, (255, 255, 255), sel2.rect, 3, border_radius=8)
+
+        self.p2_easy.draw(gs.screen, self.btn_font, hovered=self.p2_easy.hit((mx, my)))
+        self.p2_med.draw(gs.screen, self.btn_font, hovered=self.p2_med.hit((mx, my)))
+        self.p2_hard.draw(gs.screen, self.btn_font, hovered=self.p2_hard.hit((mx, my)))
+
+        p2sel = {"EASY": self.p2_easy, "MED": self.p2_med, "HARD": self.p2_hard}[self.p2_diff]
+        pygame.draw.rect(gs.screen, (255, 255, 255), p2sel.rect, 2, border_radius=8)
+        if not self.p2_is_bot:
+            dim = pygame.Surface((p2sel.rect.width * 3 + 24, p2sel.rect.height), pygame.SRCALPHA)
+            dim.fill((0, 0, 0, 120))
+            gs.screen.blit(dim, (self.p2_easy.rect.left, self.p2_easy.rect.top))
+
+        _draw_text(gs.screen, "MAP:", self.font,
+                   self.panel.left + 80,
+                   self.btn_mode_sep.rect.centery,
+                   color=(200, 200, 200))
+
+        self.btn_mode_sep.draw(gs.screen, self.btn_font,
+                               hovered=self.btn_mode_sep.hit((mx, my)))
+        self.btn_mode_sym.draw(gs.screen, self.btn_font,
+                               hovered=self.btn_mode_sym.hit((mx, my)))
+        self.btn_mode_def.draw(gs.screen, self.btn_font,
+                               hovered=self.btn_mode_def.hit((mx, my)))
+
+        sel_mode_btn = {
+            "SEP": self.btn_mode_sep,
+            "SYM": self.btn_mode_sym,
+            "DEF": self.btn_mode_def
+        }[self.map_mode]
+
+        pygame.draw.rect(gs.screen, (255,255,255),
+                         sel_mode_btn.rect, 2, border_radius=8)
+
+        _draw_text(gs.screen, "MOVE:", self.font, self.panel.left + 85, self.btn_minus.rect.centery, color=(200, 200, 200))
+        self.btn_minus.draw(gs.screen, self.btn_font, hovered=self.btn_minus.hit((mx, my)))
+        self.btn_plus.draw(gs.screen, self.btn_font, hovered=self.btn_plus.hit((mx, my)))
+        self.btn_50.draw(gs.screen, self.btn_font, hovered=self.btn_50.hit((mx, my)))
+        self.btn_100.draw(gs.screen, self.btn_font, hovered=self.btn_100.hit((mx, my)))
+        self.btn_200.draw(gs.screen, self.btn_font, hovered=self.btn_200.hit((mx, my)))
+        _draw_text(gs.screen, str(self.move_limit), self.big_num_font, self.panel.left + 210, self.btn_minus.rect.centery)
+
+        self.btn_start.draw(gs.screen, self.btn_font, hovered=self.btn_start.hit((mx, my)))
+        self.btn_back.draw(gs.screen, self.btn_font, hovered=self.btn_back.hit((mx, my)))
+
+    def handle_event(self, event: pygame.event.Event):
+        """
+        Handle keyboard and mouse events on init screen.
+        
+        Returns:
+            "START" to begin game, "BACK" to return to menu, None otherwise
+        """
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return "BACK"
+            if event.key == pygame.K_RETURN:
+                self._apply_settings()
+                return "START"
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = event.pos
+
+            if self.p1_human.hit(pos):
+                self.p1_is_bot = False
+            elif self.p1_bot.hit(pos):
+                self.p1_is_bot = True
+            elif self.p1_easy.hit(pos):
+                self.p1_diff = "EASY"
+            elif self.p1_med.hit(pos):
+                self.p1_diff = "MED"
+            elif self.p1_hard.hit(pos):
+                self.p1_diff = "HARD"
+
+            elif self.p2_human.hit(pos):
+                self.p2_is_bot = False
+            elif self.p2_bot.hit(pos):
+                self.p2_is_bot = True
+            elif self.p2_easy.hit(pos):
+                self.p2_diff = "EASY"
+            elif self.p2_med.hit(pos):
+                self.p2_diff = "MED"
+            elif self.p2_hard.hit(pos):
+                self.p2_diff = "HARD"
+
+            elif self.btn_mode_sep.hit(pos):
+                self.map_mode = "SEP"
+            elif self.btn_mode_sym.hit(pos):
+                self.map_mode = "SYM"
+            elif self.btn_mode_def.hit(pos):
+                self.map_mode = "DEF"
+
+            elif self.btn_minus.hit(pos):
+                self.move_limit = max(5, self.move_limit - 5)
+            elif self.btn_plus.hit(pos):
+                self.move_limit = min(200, self.move_limit + 5)
+            elif self.btn_50.hit(pos):
+                self.move_limit = 50
+            elif self.btn_100.hit(pos):
+                self.move_limit = 100
+            elif self.btn_200.hit(pos):
+                self.move_limit = 200
+
+            elif self.btn_start.hit(pos):
+                self._apply_settings()
+                return "START"
+            elif self.btn_back.hit(pos):
+                return "BACK"
+
+        return None
 
 class GameScreen:
     """Main game screen handling gameplay, rendering, and turn resolution."""
@@ -98,7 +374,7 @@ class GameScreen:
         # Bitfield: bit 0 = P1 ready, bit 1 = P2 ready
         self.ready = 0
         
-        # Stack for undo functionality
+        self.last_bot_move_time = 0
         # UI button layout
 
     def draw_grid(self):
@@ -440,17 +716,55 @@ class GameScreen:
 
         return p1_valid, p2_valid
 
-    def _get_key(self, player: bool) -> str:
+    def _get_key(self, player: bool):
         """
-        Get the next move for a bot player.
+        Get input from bot AI for specified player.
         
         Args:
-            player: False for P1, True for P2
+            player: True for P2, False for P1
             
         Returns:
-            Move direction as string: "U", "D", "L", "R", or "S" (stay)
+            Direction string (U/D/L/R/S)
         """
-        return 'S'
+        maze = copy.deepcopy(gs.grid)
+        for i in range(gs.gridSize):
+            for j in range(gs.gridSize):
+                maze[i][j] = "#" if gs.grid[i][j] == 1 else "."
+        for x, y in gs.boxes:
+            maze[y][x] = "X"
+
+        if not player:
+            x, y = gs.playerOnePos
+            maze[y][x] = "a"
+            x, y = gs.playerTwoPos
+            maze[y][x] = "b"
+            x, y = gs.portalOne
+            maze[y][x] = "A"
+            x, y = gs.portalTwo
+            maze[y][x] = "B"
+        else:
+            x, y = gs.playerTwoPos
+            maze[y][x] = "a"
+            x, y = gs.playerOnePos
+            maze[y][x] = "b"
+            x, y = gs.portalTwo
+            maze[y][x] = "A"
+            x, y = gs.portalOne
+            maze[y][x] = "B"
+
+        payload = {
+            "size": gs.gridSize,
+            "cur": gs.turn,
+            "T": move_limit,
+            "maze": maze,
+            "playerHist": gs.playerMove[player],
+            "oppHist": gs.playerMove[not player],
+            "playerScore": gs.score[player],
+            "oppScore": gs.score[not player],
+            "playerDidMove": gs.playerDidMove[player],
+            "oppDidMove": gs.playerDidMove[not player],
+        }
+        return interactor.interact(filename[player], payload)
 
     def _resolve_turn_if_ready(self):
         """Resolve the turn if both players have submitted moves."""
@@ -490,22 +804,38 @@ class GameScreen:
         """
         Handle game screen input events.
         
-        Returns: None
+        Returns: Navigation signal ("MENU", "INIT") or None
         """
             
         # Game over handling
         if self.game_over:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return "MENU"
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return "MENU"
+                elif event.key == pygame.K_r:
+                    self.reset_game()
+                    return None
             return None
 
-        # Player 1 input handling
+        both_bots = playerOneInteract and playerTwoInteract
+        space_pressed = pygame.key.get_pressed()[pygame.K_SPACE]
+
+        allow_bot_move = True
+        if both_bots:
+            current_time = pygame.time.get_ticks()
+            if space_pressed and (current_time - self.last_bot_move_time >= BOT_DELAY_MS):
+                self.last_bot_move_time = current_time
+                allow_bot_move = True
+            else:
+                allow_bot_move = False
+
+        # Player 1 input
         if (
-            event.type == pygame.KEYDOWN
+            (not playerOneInteract)
+            and event.type == pygame.KEYDOWN
             and event.key in P1_KEYS
             and (self.ready & (1 << 0)) == 0
         ):
-            # Human player controlling P1
             if event.key == pygame.K_w:
                 self.dyOne = -1
             if event.key == pygame.K_s:
@@ -516,14 +846,29 @@ class GameScreen:
                 self.dxOne = 1
             self.ready |= (1 << 0)
             self.keyOne = P1_MAP[event.key]
+        elif playerOneInteract and (self.ready & (1 << 0)) == 0:
+            if (not both_bots) or allow_bot_move:
+                key = self._get_key(False)
+                if key == "U":
+                    self.dyOne = -1
+                if key == "D":
+                    self.dyOne = 1
+                if key == "L":
+                    self.dxOne = -1
+                if key == "R":
+                    self.dxOne = 1
+                self.ready |= (1 << 0)
+                if(key not in ["U","D","L","R"]):
+                    key="S"
+                self.keyOne = key
 
-        # Player 2 input handling
+        # Player 2 input
         if (
-            event.type == pygame.KEYDOWN
+            (not playerTwoInteract)
+            and event.type == pygame.KEYDOWN
             and event.key in P2_KEYS
             and (self.ready & (1 << 1)) == 0
         ):
-            # Human player controlling P2
             if event.key == pygame.K_LEFT:
                 self.dxTwo = -1
             if event.key == pygame.K_RIGHT:
@@ -534,6 +879,21 @@ class GameScreen:
                 self.dyTwo = 1
             self.ready |= (1 << 1)
             self.keyTwo = P2_MAP[event.key]
+        elif playerTwoInteract and (self.ready & (1 << 1)) == 0:
+            if (not both_bots) or allow_bot_move:
+                key = self._get_key(True)
+                if key == "L":
+                    self.dxTwo = -1
+                if key == "R":
+                    self.dxTwo = 1
+                if key == "U":
+                    self.dyTwo = -1
+                if key == "D":
+                    self.dyTwo = 1
+                self.ready |= (1 << 1)
+                if(key not in ["U","D","L","R"]):
+                    key="S"
+                self.keyTwo = key
 
         self._resolve_turn_if_ready()
 
@@ -583,24 +943,52 @@ def reset_game_state(generate: bool = False):
 
 def main():
     """Main game loop managing state transitions between menu, init, and game screens."""
+    menu = MenuScreen()
+    init = InitScreen()
     game = GameScreen()
 
-    mode = "GAME"
+    mode = "MENU"
     running = True
 
     while running:
         gs.clock.tick(60)
 
+        if mode == "GAME" and playerOneInteract and playerTwoInteract:
+            if pygame.key.get_pressed()[pygame.K_SPACE]:
+                pygame.event.post(pygame.event.Event(pygame.USEREVENT))
+
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or mode == "MENU":
+            if event.type == pygame.QUIT:
                 running = False
                 break
 
-            else:
-                mode = game.handle_event(event)
+            if mode == "MENU":
+                if menu.handle_event(event):
+                    init = InitScreen()
+                    mode = "INIT"
 
-        # Render current screen
-        game.draw()
+            elif mode == "INIT":
+                sig = init.handle_event(event)
+                if sig == "BACK":
+                    mode = "MENU"
+                elif sig == "START":
+                    reset_game_state(True)
+                    game = GameScreen()
+                    mode = "GAME"
+
+            else:
+                signal = game.handle_event(event)
+                if signal == "MENU":
+                    mode = "MENU"
+                elif signal == "INIT":
+                    mode = "INIT"
+
+        if mode == "MENU":
+            menu.draw()
+        elif mode == "INIT":
+            init.draw()
+        else:
+            game.draw()
 
         pygame.display.flip()
 
