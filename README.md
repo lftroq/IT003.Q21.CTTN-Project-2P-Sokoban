@@ -1,6 +1,6 @@
 ﻿# IT003.Q21.CTTN-Project-2P-Sokoban
 
-A two-player strategy game, where players push boxes to theỉr portal to score.
+A two-player strategy game, where players push boxes to their portal to score.
 
 This project consists of AI agents, a map generator, and many modes and features.
 
