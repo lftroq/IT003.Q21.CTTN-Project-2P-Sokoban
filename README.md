@@ -1,6 +1,7 @@
 ﻿# IT003.Q21.CTTN-Project-2P-Sokoban
 
 A two-player strategy game, where players push boxes to theỉr portal to score.
+
 This project consists of AI agents, a map generator, and many modes and features.
 
 ---
@@ -8,10 +9,12 @@ This project consists of AI agents, a map generator, and many modes and features
 ## Gameplay
 
 Two players will control their characters to move on the map simultaneously.
+
 Push the boxes into:
 - Portal 1 (marked in Red by default) to score for Player 1.
 - Portal 2 (marked in Blue by default) to score for Player 2
 - Game ends when it reaches the move limit.
+- 
 ---
 
 ## Controls
@@ -27,6 +30,7 @@ Push the boxes into:
 ## AI agents
 
 This game supports bots with multiple difficulties via `.exe` files:
+
 Default bots:
 | Level | File      | Algorithm |
 |-------|-----------|-----------|
@@ -53,25 +57,29 @@ The map is generated with `setup/mapGen.exe` (C++), using weighted random.
 Currently, the game only supports `N = 16`, where `N` is the map size.
 
 ### Map structure (map.txt)
-`.` = Empty cell.
-`#` = Wall/obstacle cell.
-`X` = Box.
-`A` = Portal P1.
-`B` = Portal P2.
-`a` = Player 1.
-`b` = Player 2.
+
+The map is decoded with the following rules:
+- `.` = Empty cell.
+- `#` = Wall/obstacle cell.
+- `X` = Box.
+- `A` = Portal P1.
+- `B` = Portal P2.
+- `a` = Player 1.
+- `b` = Player 2.
 
 ---
 
 ## Game Mechanics
 
 The game occurs in `T` turns, where the turns are simultaneously resolved. Players push a box into the goal to score.
+
 Detailed interaction:
 - The player can push a box by moving into the box cell. The box is pushed toward the player's opposite direction by a cell.
 - Multiple boxes can be pushed at once (Chain push).
 - The player cannot push or move into obstacle cells.
 - The player cannot move into the portal, but can push a box into the portal.
 - When a box is moved into the goal, the player who owns that portal will receive a point.
+
 Special interaction:
 - Both players cannot stand in a single cell. If they move into the same cell simultaneously, both players' actions fail.
 - Both players cannot simultaneously push a box.
@@ -85,7 +93,9 @@ Special interaction:
 ## User Interface
 
 The UI is implemented using Pygame.
-The game's asset is stored in `graphics` and loaded by `setup/gameSetup.py`.
+
+The game's asset is stored in `graphics` and loaded in `setup/gameSetup.py`.
+
 The game has three screens.
 ### Menu
 - Start game.
@@ -93,8 +103,8 @@ The game has three screens.
 Initialize the game, choose game settings:
 - Human or bot for each player.
 - Difficulty of the bots if a bot is chosen.
-- Set move limit
-- Set map mode (SEP / SYM / DEF)
+- Set move limit.
+- Set map mode (SEP / SYM / DEF).
 ### Game screen
 Display:
 - Current game board.
@@ -153,11 +163,12 @@ At each turn, your bot control player `a` and receives the current game state in
 - The last line contains two integers `playerScore` and `oppScore`, which are the player's score and the opponent's score.
 
 #### Output
-A single character `U/D/L/R` describing the bot's choice for the next move.
+- A single character `U/D/L/R` describing the bot's choice for the next move.
 
 ### Integrating the bot
 
 The bot should be implemented and compiled into an `.exe` file and placed into the `interactor` directory.
+
 Register in `game.py`:
 ```python
 BOT_MODELS = {
@@ -170,21 +181,20 @@ BOT_MODELS = {
 ### Algorithm Ideas
 
 You can experiment with:
-
-BFS / DFS (basic pathfinding).
-Dijkstra / A*.
-Beam search with heuristic evaluation.
-Greedy strategies.
-Minimax (adversarial planning).
-Alpha-Beta pruning.
-Monte Carlo Tree Search (MCTS).
-Reinforcement Learning (advanced).
+- BFS / DFS (basic pathfinding).
+- Dijkstra / A*.
+- Beam search with heuristic evaluation.
+- Greedy strategies.
+- Minimax (adversarial planning).
+- Alpha-Beta pruning.
+- Monte Carlo Tree Search (MCTS).
+- Reinforcement Learning (advanced).
 
 ### Important Notes
-The game uses simultaneous turns, so consider predicting opponent actions.
-Invalid moves (e.g., walking into walls) will be ignored.
-Box pushing must follow valid rules.
-Keep response time fast to avoid timeouts.
+- The game uses simultaneous turns, so consider predicting opponent actions.
+- Invalid moves (e.g., walking into walls) will be ignored.
+- Box pushing must follow valid rules.
+- Keep response time fast to avoid timeouts.
 
 ## Known issues
 - The default map mode may cause unfairness.
