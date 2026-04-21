@@ -115,11 +115,10 @@ Display:
 
 ## Run
 ```bash
-cd interactor
-g++ mapGen.cpp -o mapGen
-cd ..
-python game.py
+pip install -r requirements.txt
+python main.py
 ```
+Before running `python main.py`, make sure that all `.cpp` files are compiled into `.exe`.
 
 ---
 
