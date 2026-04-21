@@ -1,3 +1,12 @@
+"""Game initialization module for 2-player Sokoban.
+
+Handles GUI setup, map generation, and game state initialization including:
+- Display and rendering configuration
+- Game asset loading
+- Map generation and parsing
+- Player, portal, and box positioning
+- Game state variables
+"""
 # Game initialization module for 2-player Sokoban
 # Handles GUI setup, map generation, and game state initialization
 
@@ -43,20 +52,48 @@ whiteCells = whiteCells[boxCount:]
 
 
 def _resolve_mapgen_exe(base_dir: str) -> str:
-    """Locate the map generator executable (Windows or Linux)."""
+    """Locate the map generator executable.
+    
+    Searches for the map generator executable in platform-specific order.
+    First checks for mapGen.exe (Windows), then mapGen (Linux/Unix).
+    
+    Args:
+        base_dir (str): Base directory to search for the executable.
+    
+    Returns:
+        str: Absolute path to the existing executable, or path to mapGen
+             if neither exists (caller responsible for error handling).
+    """
     cand1 = os.path.join(base_dir, "mapGen.exe")
     cand2 = os.path.join(base_dir, "mapGen")
     return cand1 if os.path.exists(cand1) else cand2
 
 
 def getMap(generate: bool = False, N: int = 16, MODE: str = "SEP"):
-    """
-    Load or generate a game map from file.
+    """Load or generate a game map and initialize game state.
+    
+    Optionally runs the map generator to create a maze configuration, then
+    parses the maze.txt file to populate the game grid and entity positions.
+    Updates global variables for grid, player positions, portals, and boxes.
+    
+    Supported map symbols:
+        '#': Wall
+        '.': Walkable tile
+        'X': Box
+        'A': Portal 1
+        'B': Portal 2
+        'a': Player 1 starting position
+        'b': Player 2 starting position
     
     Args:
-        generate: Whether to run the map generator
-        N: Map size (currently supports N=16 only)
-        MODE: Generation mode - "SEP", "DEF", or "SYM"
+        generate (bool): Whether to run the map generator. Defaults to False.
+        N (int): Map size (typically 16). Defaults to 16.
+        MODE (str): Generation mode - 'SEP' (separate), 'DEF' (default), or 'SYM' (symmetric).
+                   Defaults to 'SEP'.
+    
+    Raises:
+        FileNotFoundError: If maze.txt cannot be found.
+        IOError: If maze.txt cannot be read.
     """
     global grid, whiteCells, boxes, playerOnePos, playerTwoPos, portalOne, portalTwo
     global gridSize

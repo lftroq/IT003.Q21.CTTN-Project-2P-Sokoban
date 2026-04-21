@@ -3,7 +3,30 @@ import os
 
 mapSize = 16
 
-def interact (filename, input: dict):
+def interact(filename, input: dict):
+    """Execute a game interactor program with game state input.
+    
+    Runs an executable file with formatted game state information via stdin.
+    The input dictionary is converted into a multi-line string format expected
+    by the interactor program.
+    
+    Args:
+        filename (str): Name of the executable file to run (relative to interactor folder).
+        input (dict): Dictionary containing game state with keys:
+            - 'size': Map size
+            - 'cur': Current turn number
+            - 'T': Total turns
+            - 'maze': 2D list representing the game maze
+            - 'playerHist': Player move history
+            - 'oppHist': Opponent move history
+            - 'playerDidMove': Whether player moved (per turn)
+            - 'oppDidMove': Whether opponent moved (per turn)
+            - 'playerScore': Player's current score
+            - 'oppScore': Opponent's current score
+    
+    Returns:
+        str: The stdout output from the executed program.
+    """
     # prepare input
     inputLines = [f'{input["size"]} {input["cur"]} {input["T"]}']
     for i in range(mapSize):
@@ -57,6 +80,16 @@ def interact (filename, input: dict):
     return stdout
 
 def compile_cpp_files():
+    """Compile all C++ files in the interactor directory.
+    
+    Searches the directory containing this script for all .cpp files and
+    compiles each one using g++ to create corresponding executable files.
+    Each compiled executable has the same name as the source file without
+    the .cpp extension.
+    
+    Raises:
+        subprocess.CalledProcessError: If compilation of any C++ file fails.
+    """
     folder = os.path.dirname(os.path.abspath(__file__))
     cpp_files = [f for f in os.listdir(folder) if f.endswith('.cpp')]
     
