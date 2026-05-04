@@ -1,3 +1,17 @@
+/**
+ * @file sample.cpp
+ * @brief Easy difficulty bot for Sokoban
+ * 
+ * This module implements a basic random-move bot for the game.
+ * It reads the game state and outputs a random valid direction.
+ * 
+ * @details
+ * - Serves as the "EASY" bot opponent
+ * - Moves randomly with no strategic logic
+ * 
+ * @author lftroq
+ * @version 1.0
+ */
 #include <bits/stdc++.h>
 using namespace std;
 
