@@ -14,7 +14,7 @@ Push the boxes into:
 - Portal 1 (marked in Red by default) to score for Player 1.
 - Portal 2 (marked in Blue by default) to score for Player 2
 - Game ends when it reaches the move limit.
-- 
+
 ---
 
 ## Controls

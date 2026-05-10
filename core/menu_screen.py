@@ -24,10 +24,53 @@ class MenuScreen:
         self.tutorial_rect.center = (gs.xSize // 2, gs.ySize // 2 + 100)
 
         self.hint_font = pygame.font.Font(gs.FONT, 16)
+        
+        self._create_bg()
+
+    def _create_bg(self):
+        """Create a blurred game image background."""
+        bg = pygame.Surface((gs.xSize, gs.ySize))
+        bg.fill((0, 0, 0))
+        
+        for row in range(gs.gridSize):
+            for col in range(gs.gridSize):
+                x = col * gs.tileSize + gs.map_padding_x
+                y = row * gs.tileSize + gs.map_padding_y
+
+                if gs.grid[row][col] == 1:
+                    bg.blit(gs.wallImg, (x, y))
+                else:
+                    bg.blit(gs.tileImg, (x, y))
+                pygame.draw.rect(bg, gs.grayColor, (x, y, gs.tileSize, gs.tileSize), 1)
+
+        for x, y in gs.boxes:
+            bg.blit(gs.boxImg, (x * gs.tileSize + gs.map_padding_x, y * gs.tileSize + gs.map_padding_y))
+
+        if gs.portalOne:
+            x, y = gs.portalOne
+            bg.blit(gs.portalOneImg, (x * gs.tileSize + gs.map_padding_x, y * gs.tileSize + gs.map_padding_y))
+        if gs.portalTwo:
+            x, y = gs.portalTwo
+            bg.blit(gs.portalTwoImg, (x * gs.tileSize + gs.map_padding_x, y * gs.tileSize + gs.map_padding_y))
+
+        if gs.playerOnePos:
+            x, y = gs.playerOnePos
+            bg.blit(gs.playerOneImg, (x * gs.tileSize + gs.map_padding_x, y * gs.tileSize + gs.map_padding_y))
+        if gs.playerTwoPos:
+            x, y = gs.playerTwoPos
+            bg.blit(gs.playerTwoImg, (x * gs.tileSize + gs.map_padding_x, y * gs.tileSize + gs.map_padding_y))
+
+        factor = 8
+        small = pygame.transform.smoothscale(bg, (max(1, gs.xSize // factor), max(1, gs.ySize // factor)))
+        self.bg_surface = pygame.transform.smoothscale(small, (gs.xSize, gs.ySize))
+
+        dim = pygame.Surface((gs.xSize, gs.ySize), pygame.SRCALPHA)
+        dim.fill((0, 0, 0, 150))
+        self.bg_surface.blit(dim, (0, 0))
 
     def draw(self):
         """Render menu screen with title and buttons."""
-        gs.screen.fill((0, 0, 0))
+        gs.screen.blit(self.bg_surface, (0, 0))
 
         _draw_text(gs.screen, "2P SOKOBAN", self.title_font, gs.xSize // 2, gs.ySize // 2 - 80)
 
@@ -75,3 +118,4 @@ class MenuScreen:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
             return "PLAY"
         return None
+
