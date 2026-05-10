@@ -1,17 +1,9 @@
 /**
  * @file lftroq.cpp
- * @brief Medium difficulty heuristic bot for Sokoban
+ * @brief Bot implementation for Sokoban.
  * 
- * This module implements a bot that uses heuristic evaluation and BFS
- * pathfinding to solve the Sokoban puzzle.
- * 
- * @details
- * - Serves as the "MED" bot opponent
- * - Evaluates box priorities based on distance to player and goal
- * - Uses BFS to find pushing paths within a time limit
- * 
- * @author lftroq
- * @version 1.0
+ * This file contains the implementation of the lftroq bot,
+ * utilizing specific search algorithms to evaluate and output the best move.
  */
 #include<bits/stdc++.h>
 using namespace std;
@@ -19,10 +11,10 @@ using namespace std;
 const int dx[] = {-1, 0, 1, 0};
 const int dy[] = {0, -1, 0, 1};
 const char dir[] = {'U', 'L', 'D', 'R'};
-const int TIME_LIMIT_MS = 950; // offset 50ms
+const int TIME_LIMIT_MS = 450; // offset 50ms
 /// Up, Left, Down, Right
 
-mt19937_64 rng(time(0));
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
 
 class SokobanSolver {
 /**
@@ -57,7 +49,7 @@ public:
          * @brief Finds a partial or complete solution within TIME_LIMIT_MS.
          * 
          * Algorithm:
-         * 1. Selects the most promising box using heuristic evaluation
+         * 1. Selects the last box to push
          * 2. Checks if box can be pushed toward goal from reachable positions
          * 3. Executes push sequence if path exists
          * 4. Returns after first successful move or time limit exceeded
@@ -73,42 +65,19 @@ public:
             if (elapsed > TIME_LIMIT_MS) break;
             // printMap();
 
-            /// Choosing the most potential box
+            /// Choosing the last box
             for(int i = 0; i < (int)boxes.size(); i++) {
                 pair<int, int> box = boxes[i];
                 if(box.first == -1) continue;
                 grid[boxes[i].first][boxes[i].second] = '#';
             }
-            double bestHeur = -1e9;
-            int bestBoxIndex = -1;
 
-            for(int i = 0; i < (int)boxes.size(); i++) {
-                pair<int, int> box = boxes[i];
-                if(box.first == -1) continue;
-                grid[box.first][box.second] = 'X';
-                bool isPotential = false;
-                for(int dir = 0; dir < 4; dir++) {
-                    pair<int, int> behind = {box.first - dx[dir], box.second - dy[dir]};
-                    if(!isInGrid(behind)) continue;
-                    if(grid[behind.first][behind.second] == '#') continue;
-                    string toMove = bfsReach(player, box, behind);
-                    if(toMove[0] != '#') isPotential = true;
-                }
-                if(isPotential) {
-                    double temp = heuristicEvaluation(box);
-                    if(bestHeur < temp) {
-                        bestBoxIndex = i;
-                        bestHeur = temp;
-                    }
-                }
-                grid[box.first][box.second] = '#';
-            }
-            if(bestBoxIndex == -1) break;
-
+            if(boxes.empty()) break;
+            
             /// Execute SingleBoxSolver
 
-            pair<int, int> box = boxes[bestBoxIndex];
-            boxes[bestBoxIndex] = {-1, -1};
+            pair<int, int> box = boxes.back();
+            boxes.pop_back();
             string temp = bfsBox(player, box, goal);
             // cerr << "Box: " << box.first << ' ' << box.second << endl;
             // cout << "Player: " << player.first << ' ' << player.second << endl;
@@ -161,27 +130,6 @@ private:
             for(int j = 0; j < N; j++) cout << grid[i][j];
             cout << endl;
         }
-    }
-
-    double heuristicEvaluation(pair<int, int> boxes) {
-        /**
-         * @method SokobanSolver::heuristicEvaluation(pair<int,int> boxes)
-         * @brief Evaluates priority of a box for pushing.
-         * 
-         * Uses weighted combination: 2 * (negative player distance) + (negative goal distance)
-         * Prioritizes boxes close to goal while maintaining player accessibility.
-         * 
-         * @param boxes Target box coordinates
-         * @return Double value representing box priority (higher = better)
-         */
-        int playerDist = -abs(boxes.first - player.first) - abs(boxes.second - player.second);
-        int goalDist = -abs(boxes.first - goal.first) - abs(boxes.second - goal.second);
-        /// Choose the nearest box to player
-        /// Caution: May cause infinite loop
-        // return playerDist;
-        /// Choose the nearest box to goal
-        // return goalDist;
-        return 2 * playerDist + goalDist;
     }
 
     bool isInGrid(pair<int, int> pos) {
@@ -313,6 +261,14 @@ private:
     }
 };
 
+/**
+ * @brief Entry point for the bot executable.
+ * 
+ * Reads the current game state from standard input, initializes the solver,
+ * and outputs the calculated best move to standard output.
+ * 
+ * @return 0 on successful execution.
+ */
 int main(){
     ios_base::sync_with_stdio(0);cin.tie(0);cout.tie(0);
     int N,T_cur,T_total;

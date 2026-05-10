@@ -1,16 +1,9 @@
 /**
  * @file sample.cpp
- * @brief Easy difficulty bot for Sokoban
+ * @brief Simple random-move bot for Sokoban.
  * 
- * This module implements a basic random-move bot for the game.
- * It reads the game state and outputs a random valid direction.
- * 
- * @details
- * - Serves as the "EASY" bot opponent
- * - Moves randomly with no strategic logic
- * 
- * @author lftroq
- * @version 1.0
+ * This executable reads the game state from standard input and outputs a random
+ * valid move ('U', 'L', 'D', 'R', or 'S'). It serves as a baseline or testing bot.
  */
 #include <bits/stdc++.h>
 using namespace std;
@@ -19,6 +12,14 @@ const char dir[] = {'U', 'L', 'D', 'R', 'S'};
 
 mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
 
+/**
+ * @brief Entry point for the sample bot.
+ * 
+ * Reads grid size, turn limits, the maze state, and player histories from stdin.
+ * Then randomly selects and prints a single move character to stdout.
+ * 
+ * @return 0 on successful execution.
+ */
 int main() {
     ios_base::sync_with_stdio(0);cin.tie(0);cout.tie(0);
     int N, T_cur, T_total, playerScore, oppScore;

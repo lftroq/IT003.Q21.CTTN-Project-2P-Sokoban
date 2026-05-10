@@ -1,4 +1,4 @@
-﻿# IT003.Q21.CTTN-Project-2P-Sokoban
+# IT003.Q21.CTTN-Project-2P-Sokoban
 
 A two-player strategy game, where players push boxes to their portal to score.
 
@@ -34,9 +34,9 @@ This game supports bots with multiple difficulties via `.exe` files:
 Default bots:
 | Level | File      | Algorithm |
 |-------|-----------|-----------|
-| EASY  | TBD | TBD |
-| MED   | TBD | TBD |
-| HARD  | TBD | TBD |
+| EASY  | `lftroq.exe` | BFS / Dijkstra |
+| MED   | `lftroq_v2.exe` | BFS / Dijkstra + Defensive Strategy |
+| HARD  | `beam_search.exe` | Beam Search |
 
 Bots are saved in the `interactor` directory and interact via the module `interactor/interactor.py`.
 
@@ -52,9 +52,9 @@ The map is generated with `setup/mapGen.exe` (C++), using weighted random.
 |------|------|------|
 | Separate | `SEP` | Two players and goals are separated. It is also ensured that the map is symmetrical. |
 | Symmetrical | `SYM` | The map is symmetrical. |
-| Default | `DEF` | The map is generated fully randomly |
+| No Obstacles | `NON` | The map has no walls/obstacles and is completely open. It is also ensured that the map is symmetrical. |
 
-Currently, the game only supports `N = 16`, where `N` is the map size.
+The game supports different map sizes: 12, 16, and 24.
 
 ### Map structure (map.txt)
 
@@ -126,11 +126,20 @@ Before running `python main.py`, make sure that all `.cpp` files are compiled in
 
 ```
 │
+├── requirements.txt
 ├── game.py
+├── simulator.py
+├── core/
+│   ├── config.py
+│   ├── game_screen.py
+│   ├── init_screen.py
+│   ├── menu_screen.py
+│   ├── tutorial_screen.py
+│   ├── ui_button.py
+│   └── utils.py
 ├── setup/
 │   ├── gameSetup.py
-│   ├── mapGen (.cpp and .exe)
-│   └── maze.txt
+│   └── mapGen (.cpp and .exe)
 ├── interactor/
 │   ├── bots (.cpp and .exe)
 │   └── interactor.py
@@ -196,13 +205,10 @@ You can experiment with:
 - Keep response time fast to avoid timeouts.
 
 ## Known issues
-- The default map mode may cause unfairness.
-- The portal may be separated from the players.
-- UI is not responsive to all sizes.
+- Random map generation does not guarantee that the portals and boxes are reachable from the players' spawn points (they might be entirely enclosed by walls).
+- The game may freeze completely if a bot's process falls into an infinite loop or takes too long to execute, as there is currently no strict timeout implementation.
 
 ## Future improvement
 - Preview map in GameInit screen.
-- Choose custom size (8 / 16 / 24).
-- Utility buttons, replay system.
 - Online multiplayer.
 - Better bots' algorithm.

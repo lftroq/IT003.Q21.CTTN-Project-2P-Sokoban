@@ -64,7 +64,7 @@ int wRand(int l, int r, int t){
  * @param size_w Weighting factor for blockage size distribution
  * @return Maze with generated blockages
  */
-vector<vector<int>> gen_blockage_3(vector<vector<int>> maze, int num_b, int size_b, int size_w){
+vector<vector<int>> gen_blockage(vector<vector<int>> maze, int num_b, int size_b, int size_w){
     for(int i=0; i<(int)maze.size(); i++){
         for(int j=0; j<(int)maze[0].size(); j++){
             maze[i][j] = 1;
@@ -95,7 +95,6 @@ vector<vector<int>> gen_blockage_3(vector<vector<int>> maze, int num_b, int size
             }
         }
     }
-
     return maze;
 }
 
@@ -157,15 +156,21 @@ vector<vector<int>> gen_position(vector<vector<int>> maze, int mask=3){
 }
 
 /**
- * @brief Generates a standard unseparated maze
- * @return Complete maze grid of size N×N
+ * @brief Generates a no-obstacles maze
+ * @return Complete maze grid of size NxN
  */
-vector<vector<int>> gen_maze(){
-    vector<vector<int>> maze(N, vector<int>(N, 0));
-    maze = gen_blockage_3(maze, 30, 10, Rand(-1, 1));
-    maze = gen_portal(maze);
-    maze = gen_box(maze, 15);
-    maze = gen_position(maze);
+vector<vector<int>> gen_non_maze(){
+    vector<vector<int>> maze(N/2, vector<int>(N, 0));
+    maze = gen_portal(maze, 1);
+    maze = gen_box(maze, Rand(15, 20) * N / 16);
+    maze = gen_position(maze, 1);
+    for(int i=N/2-1; i>=0; i--) {
+        maze.push_back(maze[i]);
+        for(int j=0; j<N; j++) {
+            if(maze.back()[j] == 4) maze.back()[j] = 5;
+            if(maze.back()[j] == 6) maze.back()[j] = 7;
+        }
+    }
     return maze;
 }
 
@@ -176,9 +181,9 @@ vector<vector<int>> gen_maze(){
  */
 vector<vector<int>> gen_sep_maze(){
     vector<vector<int>> maze(N/2-1, vector<int>(N, 0));
-    maze = gen_blockage_3(maze, 15, 10, Rand(-1, 1));
+    maze = gen_blockage(maze, Rand(15, 20) * N / 16, 10, Rand(-1, 1));
     maze = gen_portal(maze, 1);
-    maze = gen_box(maze, 10);
+    maze = gen_box(maze, Rand(15, 20) * N / 16);
     maze = gen_position(maze, 1);
     vector<int> temp(N, 1);
     maze.push_back(temp);
@@ -199,9 +204,9 @@ vector<vector<int>> gen_sep_maze(){
  */
 vector<vector<int>> gen_sym_maze(){
     vector<vector<int>> maze(N/2, vector<int>(N, 0));
-    maze = gen_blockage_3(maze, 15, 10, Rand(-1, 1));
+    maze = gen_blockage(maze, Rand(15, 20) * N / 16, 10, Rand(-1, 1));
     maze = gen_portal(maze, 1);
-    maze = gen_box(maze, 10);
+    maze = gen_box(maze, Rand(10, 15) * N / 16);
     maze = gen_position(maze, 1);
     for(int i=N/2-1; i>=0; i--) {
         maze.push_back(maze[i]);
@@ -232,24 +237,20 @@ char decode(int x){
 }
 
 /**
- * @brief Outputs maze to file in text format
+ * @brief Outputs maze to stdout in text format
  * @param maze Maze grid to write
- * @details Writes maze.txt with character-encoded cells
+ * @details Writes character-encoded cells to standard output
  */
 void print_maze(vector<vector<int>> maze){
-    ofstream fout("maze.txt");
-
     for(int i=0; i<(int)maze.size(); i++){
         //cerr << "::: ";
         for(int j=0; j<(int)maze[0].size(); j++){
-            fout << decode(maze[i][j]);
+            cout << decode(maze[i][j]);
             //cerr << decode(maze[i][j]);
         }
-        fout << '\n';
+        cout << '\n';
         //cerr << '\n';
     }
-
-    fout.close();
 }
 
 int32_t main(){
@@ -263,10 +264,10 @@ int32_t main(){
     vector<vector<int>> maze;
     if(MODE == "SEP") maze = gen_sep_maze();
     else if(MODE == "SYM") maze = gen_sym_maze();
-    else maze = gen_maze();
+    else maze = gen_non_maze();
     print_maze(maze);
 
-    cerr << "NO BUG";
+    // cerr << "NO BUG";
 
     return 0;
 }

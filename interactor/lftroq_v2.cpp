@@ -1,17 +1,9 @@
 /**
  * @file lftroq_v2.cpp
- * @brief Hard difficulty aggressive bot for Sokoban
+ * @brief Bot implementation for Sokoban.
  * 
- * This module implements an advanced bot that not only solves the puzzle
- * but also plays aggressively against the opponent when leading in score.
- * 
- * @details
- * - Serves as the "HARD" bot opponent
- * - Includes a defensive mode to block the opponent when ahead
- * - Employs Dijkstra's algorithm for optimal box pushing paths
- * 
- * @author lftroq
- * @version 2.0
+ * This file contains the implementation of the lftroq_v2 bot,
+ * utilizing specific search algorithms to evaluate and output the best move.
  */
 #include<bits/stdc++.h>
 using namespace std;
@@ -20,7 +12,7 @@ const int MAX_N = 32;
 const int dx[] = {-1, 0, 1, 0};
 const int dy[] = {0, -1, 0, 1};
 const char dir[] = {'U', 'L', 'D', 'R'};
-const int TIME_LIMIT_MS = 320; // offset 50ms
+const int TIME_LIMIT_MS = 450; // offset 50ms
 /// Up, Left, Down, Right
 
 class SokobanSolver {
@@ -171,7 +163,7 @@ private:
          * @method SokobanSolver::heuristicEvaluation(pair<int,int> boxes)
          * @brief Evaluates priority of a box for pushing.
          * 
-         * Uses weighted combination: 2 * (negative player distance) + (negative goal distance)
+         * Uses weighted combination: 3 * (negative player distance) + (negative goal distance)
          * Prioritizes boxes close to goal while maintaining player accessibility.
          * 
          * @param boxes Target box coordinates
@@ -452,6 +444,14 @@ private:
     }
 };
 
+/**
+ * @brief Entry point for the bot executable.
+ * 
+ * Reads the current game state from standard input, initializes the solver,
+ * and outputs the calculated best move to standard output.
+ * 
+ * @return 0 on successful execution.
+ */
 int main(){
     ios_base::sync_with_stdio(0);cin.tie(0);cout.tie(0);
     int N, T_cur, T_total, playerScore, oppScore;
