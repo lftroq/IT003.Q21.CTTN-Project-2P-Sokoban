@@ -116,9 +116,9 @@ Display:
 ## Run
 ```bash
 pip install -r requirements.txt
-python main.py
+python game.py
 ```
-Before running `python main.py`, make sure that all `.cpp` files are compiled into `.exe`.
+Before running `python game.py`, make sure that all `.cpp` files are compiled into `.exe`.
 
 ---
 
