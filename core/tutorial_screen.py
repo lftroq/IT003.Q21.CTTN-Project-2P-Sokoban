@@ -60,6 +60,7 @@ class TutorialScreen:
             ("A player can still push a box into opponent's goal. However, the opponent's score will increase instead. ", self.text_font, (200, 200, 200)),
             ("If a player push a box into the cell that the opponent is also moving into, the opponent's move will succeed and the player's move will be cancelled out", self.text_font, (200, 200, 200)),
             ("If a player push a box into the cell that the opponent is also standing, but in that turn the opponent move, both moves still succeed.", self.text_font, (200, 200, 200)),
+            ("If two players standing beside and move to each other's direction, their position swap.", self.text_font, (200, 200, 200)),
             ("", self.text_font, (0,0,0)),
         ]
 
