@@ -35,7 +35,7 @@ Default bots:
 | Level | File      | Algorithm |
 |-------|-----------|-----------|
 | EASY  | `lftroq.exe` | BFS / Dijkstra |
-| MED   | `lftroq_v2.exe` | BFS / Dijkstra + Defensive Strategy |
+| MED   | `lftroq_v2.exe` | BFS / Dijkstra + Heuristic Evaluation + Defensive Strategy |
 | HARD  | `beam_search.exe` | Beam Search |
 
 Bots are saved in the `interactor` directory and interact via the module `interactor/interactor.py`.
@@ -96,9 +96,13 @@ The UI is implemented using Pygame.
 
 The game's asset is stored in `graphics` and loaded in `setup/gameSetup.py`.
 
-The game has three screens.
+The game has four screens.
 ### Menu
 - Start game.
+- Go to Tutorial.
+### Tutorial
+- Show tutorial for the game.
+- Back to Menu.
 ### Game init
 Initialize the game, choose game settings:
 - Human or bot for each player.
@@ -177,7 +181,7 @@ At each turn, your bot control player `a` and receives the current game state in
 
 The bot should be implemented and compiled into an `.exe` file and placed into the `interactor` directory.
 
-Register in `game.py`:
+Register in `core/config.py`:
 ```python
 BOT_MODELS = {
     "EASY": "your_bot_1.exe",
@@ -202,13 +206,15 @@ You can experiment with:
 - The game uses simultaneous turns, so consider predicting opponent actions.
 - Invalid moves (e.g., walking into walls) will be ignored.
 - Box pushing must follow valid rules.
-- Keep response time fast to avoid timeouts.
+- Keep response time fast to avoid game delay.
 
 ## Known issues
 - Random map generation does not guarantee that the portals and boxes are reachable from the players' spawn points (they might be entirely enclosed by walls).
 - The game may freeze completely if a bot's process falls into an infinite loop or takes too long to execute, as there is currently no strict timeout implementation.
 
 ## Future improvement
+- Add timeout implementation
 - Preview map in GameInit screen.
+- Better map generation algorithm.
 - Online multiplayer.
 - Better bots' algorithm.
